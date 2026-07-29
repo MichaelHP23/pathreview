@@ -47,7 +47,7 @@ Windows-path vendored files.
 
 ## Week 8 — Reproduction & solution planning
 
-**Reproduction commit link:** (added below, this entry)
+**Reproduction commit link:** https://github.com/MichaelHP23/pathreview/commit/e26c0c5
 
 **Reproduction summary:**
 
@@ -95,7 +95,7 @@ new/fixed tests as part of the actual fix commit in Week 9, at which point
 I'll also add the missing type annotations to whichever test methods I touch
 so the hook passes cleanly.
 
-**PLAN.md link:** [PLAN.md](../pathreview/PLAN.md) (added below, this entry)
+**PLAN.md link:** https://github.com/MichaelHP23/pathreview/blob/fix/150-tech-detector-vendored-files/PLAN.md
 
 **Walkthrough video (recommended):**
 
