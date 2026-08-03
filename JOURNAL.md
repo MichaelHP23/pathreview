@@ -108,3 +108,90 @@ so the hook passes cleanly.
   `.git`, `__pycache__`, `.venv`, `venv`, plus likely additions like `target`
   (Rust/Java build output) and `.next`/`.nuxt` (JS framework build output) —
   open to narrowing this in review if it's judged too broad.
+
+## Week 9 — Solution building & PR submission
+
+### Check-in 1 (mid-week)
+
+**Current progress:**
+All 5 sub-tasks from `PLAN.md` are implemented and committed on
+`fix/150-tech-detector-vendored-files`:
+1. Normalized path separators (`\` → `/`) in `_should_skip_file`.
+2. Rewrote matching to check whole path segments (via a `SKIP_DIRECTORIES`
+   set) instead of leading-slash substrings — this is the actual fix for
+   #150, since it naturally handles root-level, nested, and Windows-path
+   cases without special-casing any of them.
+3. Broadened the skip list (`target`, `.next`, `.nuxt`, `.pytest_cache`,
+   `.mypy_cache`, `.ruff_cache`, `.tox`, `.eggs`) plus a `*.egg-info` suffix
+   check, since that pattern doesn't fit the exact-segment-match model.
+4. Fixed `test_vendor_files_excluded` (previously had zero assertions) and
+   7 other dead tests discovered along the way (see below) — all in
+   `tests/unit/test_tech_detector.py`.
+5. Added 5 new tests covering the specific edge cases from `PLAN.md`:
+   nested vendored dirs (regression guard), Windows backslash paths (root
+   + nested), the `rebuild/` substring-false-positive case, `*.egg-info`,
+   and a file literally named `build` with no extension.
+
+**Unplanned but necessary side-work:** the test file already failed
+`ruff`/`mypy` pre-commit hooks on ~30 pre-existing issues (no return-type
+annotations on any test method, 8 dead tests with unused variables and no
+real assertions) — `disallow_untyped_defs = true` applies file-wide, so I
+couldn't land any commit touching this file without also fixing those.
+Added `-> None` / `TechDetector` annotations to all 27 test methods, and
+gave each of the 8 previously-assertion-less tests a real assertion based
+on the tool's actual (verified, not assumed) behavior. One of those —
+`test_case_insensitive_extension_matching` — documents a genuine separate
+bug (extension matching is case-sensitive) via `xfail(strict=True)` rather
+than either fixing it (out of scope) or asserting the current broken
+behavior as if it were correct.
+
+Also confirmed the full `pytest tests/unit -m unit` failure set is
+byte-for-byte identical before and after my change (51 pre-existing
+failures, unrelated modules — confirmed via diffing sorted `FAILED` lines
+from both runs), except for the two tests my fix makes pass. Full-repo
+`make lint` (173 pre-existing errors) and `black --check .` (51 files) are
+also pre-existing and untouched by this branch — my two changed files pass
+`ruff`, `black`, and `mypy` individually.
+
+**Next steps:**
+Open a draft PR against `ascherj/pathreview` for peer/mentor feedback,
+fill out the PR template (documenting the pre-existing failures above),
+then mark ready for review once any feedback is addressed.
+
+**Blockers:**
+None currently — the pre-existing test-file lint debt turned out to be
+resolvable within scope rather than a true blocker, since it only required
+mechanical type annotations and restoring real assertions to already-named
+tests (not new test-writing scope creep).
+
+---
+
+### Check-in 2 (end of week)
+
+**PR link:** (added once opened — see below)
+
+**Branch:** `fix/150-tech-detector-vendored-files`
+
+**What you built:**
+Fixed `TechDetector._should_skip_file` (`agent/tools/tech_detector.py`) so
+vendored/build directories are excluded from language detection regardless
+of whether they're at the repo root, nested, or use Windows backslash
+paths — replacing leading-slash substring matching with normalized,
+segment-based directory matching, and broadening the skip list.
+
+**Tests added or updated:**
+`tests/unit/test_tech_detector.py` — fixed 8 pre-existing dead tests
+(added real assertions in place of unused-variable placeholders, verified
+each assertion against actual tool output rather than the test's original
+aspirational comment), added 5 new tests for the specific edge cases named
+in `PLAN.md`'s Edge Cases section, and added type annotations across all
+27 test methods to satisfy the repo's `disallow_untyped_defs` mypy setting.
+
+**Self-review confirmation:** [x] make check passes (on changed files;
+pre-existing repo-wide lint/format debt documented in PR description and
+confirmed unrelated) [x] make test-unit passes (pre-existing unrelated
+failures documented; zero new failures introduced, verified by diffing
+failure sets before/after)
+
+**Draft PR feedback received from:** (pending — PR opened as draft for
+peer/mentor review per this week's process)
