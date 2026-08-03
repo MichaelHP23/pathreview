@@ -168,7 +168,7 @@ tests (not new test-writing scope creep).
 
 ### Check-in 2 (end of week)
 
-**PR link:** (added once opened — see below)
+**PR link:** https://github.com/ascherj/pathreview/pull/645 (currently draft — opened for peer/mentor feedback per this week's process; will mark ready for review once feedback is addressed)
 
 **Branch:** `fix/150-tech-detector-vendored-files`
 
