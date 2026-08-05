@@ -195,3 +195,36 @@ failure sets before/after)
 
 **Draft PR feedback received from:** (pending — PR opened as draft for
 peer/mentor review per this week's process)
+
+---
+
+## Week 10 — Iteration & reflection
+
+### Reviewer feedback
+
+**Feedback received:** [ ] Yes  [x] No — still awaiting review
+
+**Summary of feedback:**
+No comments or reviews on [PR #645](https://github.com/ascherj/pathreview/pull/645) as of this writing — confirmed via `gh pr view 645 --json comments,reviews` (both empty arrays). Consistent with the Su26 course note that reviewer feedback isn't a feature this term.
+
+**How you responded:**
+N/A — nothing to respond to. Left the PR in draft rather than marking it ready for review, since there's no reviewer loop to close this term.
+
+---
+
+### Reflection
+
+**What was harder than you expected?**
+The fix itself (`agent/tools/tech_detector.py:143-164`) was small — rewriting a leading-slash substring check into segment-based matching is maybe 15 lines. What actually ate the time was everything around it. Local environment setup on Windows hit three separate walls before I could run a single test: `make` wasn't on PATH after installing it via winget, Docker Desktop's CLI wasn't on PATH either even though the daemon was installed, and then Docker Desktop itself had silently stopped between sessions and needed a manual relaunch. None of that is in the issue description — it's the unglamorous tax of working in someone else's environment instead of `create-react-app`-ing my own. Then, once I could actually run the test file, I found the existing `tests/unit/test_tech_detector.py` had 8 tests with no real assertions (bodies that called the function and then just had a comment like `# Should detect Python as primary language` instead of an `assert`) and repo-wide `mypy`/`ruff` pre-commit hooks that failed on ~30 pre-existing issues in that same file. My "one function, one file" Tier 1 issue turned into touching test infrastructure I didn't plan for in `PLAN.md`.
+
+**What did you learn about working in a large codebase?**
+The bug itself was never the hard part — it's the blast radius of touching anything adjacent to it. I couldn't land a clean commit on `tests/unit/test_tech_detector.py` without either fixing the pre-existing lint debt in that file (since `disallow_untyped_defs = true` applies file-wide, not line-wide) or leaving broken things in place that would look like I'd introduced them. I also had to prove a negative — that the 51 pre-existing test failures in the rest of the suite were unrelated to my change — by diffing sorted `FAILED` lines from a full test run before and after, rather than just asserting "it's not my code." In a solo project I'd never have needed that kind of before/after diffing discipline; here it's the only way a reviewer (or future me) can trust the change is scoped to what the PR claims.
+
+**How did AI tools help — and where did they fall short?**
+Claude was most useful for exactly the parts that had nothing to do with judgment: diagnosing why `docker info` and `make --version` failed in Git Bash when both were actually installed (stale PATH in the shell session, not a real install problem), walking the SETUP.md troubleshooting table against my actual error output, and mechanically adding `-> None` type annotations across 27 test methods. Where it fell short — or rather, where I had to be the one deciding — was scope judgment calls: whether fixing the 8 dead tests counted as "in scope" for a Tier 1 issue, and how broad to make the new skip-directory list without guessing at directories the issue never mentioned. Those aren't lookup problems, they're "what would a reviewer accept" problems, and I had to reason through the tradeoff myself and document it in `PLAN.md`'s Risks section rather than let a tool default me into either over-fixing or under-fixing.
+
+**What would you do differently if you started over?**
+I'd run `make setup` in Week 7, immediately after choosing the issue, instead of treating environment setup as a checkbox I could get to later. By the time I actually needed a working Postgres instance (Week 8, to run the reproduction test), I lost real time to Docker/PATH issues that had nothing to do with the issue itself and could have been shaken out days earlier when it wasn't blocking anything. I'd also skim the target test file for existing assertion quality *before* finalizing `PLAN.md`'s Map section — I scoped "extend/fix existing tests" without realizing how much fixing that actually implied until I was already in the file.
+
+**What are you most proud of from this module?**
+Not the fix itself — it's a genuinely small change. I'm most proud of the before/after failure-set diff I did to prove the 51 pre-existing test failures were untouched by my branch. It would have been easy to just write "pre-existing failures, not my problem" in the PR description and move on; actually diffing the sorted `FAILED` line output from two full test runs and confirming byte-for-byte that only my two target tests flipped from fail to pass is the kind of verification habit I want to carry into every future PR, not just this one.
